@@ -3,7 +3,27 @@
 set -e;
 set -o pipefail;
 
-TERMIUS_PATH="/Applications/Termius.app"
+# 参数解析
+BETA=false
+while [[ $# -gt 0 ]]; do
+	case $1 in
+		-b|--beta)
+			BETA=true
+			shift
+			;;
+		*)
+			shift
+			;;
+	esac
+done
+
+# 根据 BETA 标志设置应用路径
+if [[ "$BETA" == true ]]; then
+	TERMIUS_PATH="/Applications/Termius Beta.app"
+else
+	TERMIUS_PATH="/Applications/Termius.app"
+fi
+
 ASAR_PATH="$TERMIUS_PATH/Contents/Resources/app.asar"
 
 if [[ ! -e $ASAR_PATH ]] {

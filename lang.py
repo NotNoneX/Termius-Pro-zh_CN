@@ -56,7 +56,10 @@ class TermiusModifier:
         script_path = os.path.join(self._script_dir, "macos", "osxfix.sh")
         run_command(["chmod", "+x", script_path])
         # 以 list 形式执行脚本（脚本已赋可执行权限）
-        run_command([script_path])
+        cmd = [script_path]
+        if self.args.beta:
+            cmd.append("--beta")
+        run_command(cmd)
         logging.info("MacOS fix applied.")
 
     def load_rules(self):
@@ -228,7 +231,7 @@ class TermiusModifier:
 
     def replace_rules(self):
         """规则替换"""
-        logging.info("开始替换汉化规则...|Starting replacement...")
+        logging.info("开始替换规则...|Starting replacement...")
         code_files = self.collect_code_files()
         for file_path in code_files:
             if not os.path.exists(file_path):
@@ -494,12 +497,13 @@ def is_windows():
     return platform.system() == 'Windows'
 
 
-def get_termius_path():
+def get_termius_path(beta=False):
     """获取 Termius 的路径"""
+    app_name = "Termius Beta" if beta else "Termius"
     default_paths = {
-        "Windows": lambda: os.path.join(os.getenv("LOCALAPPDATA"), "Programs", "Termius", "resources"),
-        "Darwin": lambda: "/Applications/Termius.app/Contents/Resources",
-        "Linux": lambda: "/opt/Termius/resources"
+        "Windows": lambda: os.path.join(os.getenv("LOCALAPPDATA"), "Programs", app_name, "resources"),
+        "Darwin": lambda: f"/Applications/{app_name}.app/Contents/Resources",
+        "Linux": lambda: f"/opt/{app_name}/resources"
     }
     system = platform.system()
     path_generator = default_paths.get(system)
@@ -523,6 +527,7 @@ def get_termius_path():
 
 def main():
     parser = argparse.ArgumentParser(description="Modify Termius application.")
+    parser.add_argument("-b", "--beta", action="store_true", help="Specify if this is a beta version.")
     parser.add_argument("-t", "--trial", action="store_true", help="Activate professional edition trial.")
     parser.add_argument("-k", "--skip-login", action="store_true", help="Disable authentication workflow.")
     parser.add_argument("-l", "--localize", action="store_true",
@@ -544,7 +549,7 @@ def main():
         args.localize = True
 
     check_asar_installed()
-    termius_path = get_termius_path()
+    termius_path = get_termius_path(args.beta)
     modifier = TermiusModifier(termius_path, args)
 
     if any((args.trial, args.style, args.skip_login, args.localize)):
