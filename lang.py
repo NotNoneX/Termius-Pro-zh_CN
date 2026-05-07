@@ -433,9 +433,10 @@ def write_file_atomic(file_path, content):
         with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=file_dir, delete=False) as temp_file:
             temp_file.write(content)
             temp_path = temp_file.name
-        os.replace(temp_path, file_path)
+        if temp_path is not None:
+            os.replace(temp_path, file_path)
     finally:
-        if temp_path and os.path.exists(temp_path):
+        if temp_path is not None and os.path.exists(temp_path):
             try:
                 os.remove(temp_path)
             except OSError:
