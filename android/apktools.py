@@ -11,7 +11,7 @@ import subprocess
 import sys
 import time
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from cloudscraper.exceptions import CloudflareChallengeError, CloudflareCaptchaError
 from requests.exceptions import ConnectionError, HTTPError, Timeout, TooManyRedirects
 from pathlib import Path
@@ -377,11 +377,12 @@ class TermiusAPKModifier:
                 return None, None
 
             apk_button = download_soup.find('a', class_='downloadButton', href=True)
-            if not apk_button or not apk_button['href']:
+            if not apk_button or not isinstance(apk_button, Tag):
                 logger.error("Android APK download button not found, page structure may have changed")
                 return None, None
 
-            full_apk_url = f"{BASE_URL}{apk_button['href'].rstrip('/')}"
+            href = str(apk_button['href'])
+            full_apk_url = f"{BASE_URL}{href.rstrip('/')}"
             return download_page_url, full_apk_url
 
         except Exception as e:
@@ -393,7 +394,7 @@ class TermiusAPKModifier:
             response = self.scraper.get(url, allow_redirects=True, timeout=15)
             soup = BeautifulSoup(response.text, 'html.parser')
             download_link = soup.find('a', id='download-link', href=True)
-            if download_link:
+            if download_link and isinstance(download_link, Tag):
                 return f"{BASE_URL}{download_link['href']}"
 
             logger.error("Unable to obtain valid download link, page structure may have changed")
@@ -537,16 +538,30 @@ class TermiusAPKModifier:
         if not os.path.exists(build_apk_file):
             raise Exception("APK file for signing does not exist")
 
+        if not self.sign_properties:
+            raise Exception("Signing properties are not loaded.")
+
+        required_sign_keys = [
+            "sign.keystore",
+            "sign.keystore.password",
+            "sign.key.alias",
+            "sign.key.password",
+        ]
+        missing_keys = [key for key in required_sign_keys if key not in self.sign_properties or self.sign_properties[key] == ""]
+        if missing_keys:
+            raise Exception(f"Signing configuration missing required keys: {', '.join(missing_keys)}")
+
         build_apk_signed_file = os.path.join(self.tmp_dir, apk_filename + SIGNED_SUFFIX + EXT_APK)
         if os.path.exists(build_apk_signed_file):
             os.remove(build_apk_signed_file)
 
+        sign_props = self.sign_properties
         run_command([
             get_apksigner_shell(), 'sign',
-            '--ks', os.path.join(self.keystore_dir, self.sign_properties["sign.keystore"]),
-            '--ks-pass', f"pass:{self.sign_properties['sign.keystore.password']}",
-            '--ks-key-alias', self.sign_properties["sign.key.alias"],
-            '--key-pass', f"pass:{self.sign_properties['sign.key.password']}",
+            '--ks', os.path.join(self.keystore_dir, sign_props["sign.keystore"]),
+            '--ks-pass', f"pass:{sign_props['sign.keystore.password']}",
+            '--ks-key-alias', sign_props["sign.key.alias"],
+            '--key-pass', f"pass:{sign_props['sign.key.password']}",
             '--out', build_apk_signed_file,
             build_apk_file
         ], log=False)
