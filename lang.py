@@ -502,7 +502,7 @@ def get_termius_path(beta=False):
     """获取 Termius 的路径"""
     app_name = "Termius Beta" if beta else "Termius"
     default_paths = {
-        "Windows": lambda: os.path.join(os.getenv("LOCALAPPDATA"), "Programs", app_name, "resources"),
+        "Windows": lambda: os.path.join(os.getenv("LOCALAPPDATA", ""), "Programs", app_name, "resources"),
         "Darwin": lambda: f"/Applications/{app_name}.app/Contents/Resources",
         "Linux": lambda: f"/opt/{app_name}/resources"
     }
