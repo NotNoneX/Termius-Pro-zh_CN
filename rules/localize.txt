@@ -1179,6 +1179,8 @@ children:"personal vault."|children:"个人保管库"
 name:"Personal"|name:"个人"
 title:"Team"|title:"团队"
 
+name:"Add to Workspace"|name:"添加到工作区"
+name:"New Workspace"|name:"新建工作区"
 "Create Workspace Template":"Update Workspace Template"|"创建工作区模板":"更新工作区模板"
 placeholder:"New Workspace"|placeholder:"新建工作区"
 "Workspace Template"|"工作区模板"
